@@ -27,6 +27,9 @@ import com.microsoft.identity.client.IAccount;
 import com.microsoft.identity.client.IAuthenticationResult;
 import com.microsoft.identity.client.IMultiTenantAccount;
 import com.microsoft.identity.client.IMultipleAccountPublicClientApplication;
+import com.microsoft.identity.client.ISingleAccountPublicClientApplication;
+import com.microsoft.identity.client.ISingleAccountPublicClientApplication.CurrentAccountCallback;
+import com.microsoft.identity.client.ISingleAccountPublicClientApplication.SignOutCallback;
 import com.microsoft.identity.client.Prompt;
 import com.microsoft.identity.client.PublicClientApplication;
 import com.microsoft.identity.client.SilentAuthenticationCallback;
@@ -56,6 +59,7 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     private static final Pattern b2cAuthorityPattern = Pattern.compile("https://([^/]+)/tfp/([^/]+)/.+");
 
     private IMultipleAccountPublicClientApplication publicClientApplication;
+    private ISingleAccountPublicClientApplication publicSharedClientApplication;
 
     public RNMSALModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -71,7 +75,8 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     public void createPublicClientApplication(ReadableMap params, Promise promise) {
         ReactApplicationContext context = getReactApplicationContext();
         try {
-            // We have to make a json file containing the MSAL configuration, then use that file to
+            // We have to make a json file containing the MSAL configuration, then use that
+            // file to
             // create the PublicClientApplication
             // We first need to create the JSON model using the passed in parameters
 
@@ -98,7 +103,8 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
             msalConfigJsonObj.put("client_id", getStringOrThrow(auth, "clientId"));
 
             // Redirect URI
-            msalConfigJsonObj.put("redirect_uri", auth.hasKey("redirectUri") ? auth.getString("redirectUri") : makeRedirectUri(context).toString());
+            msalConfigJsonObj.put("redirect_uri",
+                    auth.hasKey("redirectUri") ? auth.getString("redirectUri") : makeRedirectUri(context).toString());
 
             // Authorities
             ReadableArray knownAuthorities = auth.getArray("knownAuthorities");
@@ -108,7 +114,8 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
             if (!authoritiesList.contains(authority)) {
                 authoritiesList.add(authority);
             }
-            // The authoritiesList is just a list of urls (strings), but the native android MSAL
+            // The authoritiesList is just a list of urls (strings), but the native android
+            // MSAL
             // library expects an array of objects, so we have to parse the urls
             JSONArray authoritiesJsonArr = makeAuthoritiesJsonArray(authoritiesList, authority);
             msalConfigJsonObj.put("authorities", authoritiesJsonArr);
@@ -125,23 +132,24 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
             writer.close();
 
             // Finally, create the PCA with the temporary config file we created
-            publicClientApplication =
-                    PublicClientApplication.createMultipleAccountPublicClientApplication(
-                            context, file);
+            publicClientApplication = PublicClientApplication.createMultipleAccountPublicClientApplication(
+                    context, file);
             promise.resolve(null);
         } catch (Exception e) {
             promise.reject(e);
         }
     }
 
-    private JSONArray makeAuthoritiesJsonArray(List<String> authorityUrls, String authority) throws JSONException, IllegalArgumentException {
+    private JSONArray makeAuthoritiesJsonArray(List<String> authorityUrls, String authority)
+            throws JSONException, IllegalArgumentException {
         JSONArray authoritiesJsonArr = new JSONArray();
         boolean foundDefaultAuthority = false;
 
         for (String authorityUrl : authorityUrls) {
             JSONObject authorityJsonObj = new JSONObject();
 
-            // Authority is set as the default if one is not set yet, and it matches `authority`
+            // Authority is set as the default if one is not set yet, and it matches
+            // `authority`
             if (!foundDefaultAuthority && authorityUrl.equals(authority)) {
                 authorityJsonObj.put("default", true);
                 foundDefaultAuthority = true;
@@ -153,7 +161,9 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
             if (aadAuthorityMatcher.find()) {
                 String group = aadAuthorityMatcher.group(1);
                 if (group == null)
-                    throw new IllegalArgumentException("Could not match group 1 for regex https://login.microsoftonline.com/([^/]+) in authority \"" + authorityUrl + "\"");
+                    throw new IllegalArgumentException(
+                            "Could not match group 1 for regex https://login.microsoftonline.com/([^/]+) in authority \""
+                                    + authorityUrl + "\"");
 
                 JSONObject audience;
                 switch (group) {
@@ -177,13 +187,15 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
                 authorityJsonObj.put("type", AUTHORITY_TYPE_B2C);
                 authorityJsonObj.put("authority_url", authorityUrl);
             } else {
-                throw new IllegalArgumentException("Authority \"" + authorityUrl + "\" doesn't match AAD regex https://login.microsoftonline.com/([^/]+) or B2C regex https://([^/]+)/tfp/([^/]+)/.+");
+                throw new IllegalArgumentException("Authority \"" + authorityUrl
+                        + "\" doesn't match AAD regex https://login.microsoftonline.com/([^/]+) or B2C regex https://([^/]+)/tfp/([^/]+)/.+");
             }
 
             authoritiesJsonArr.put(authorityJsonObj);
         }
 
-        // If a default authority was not found, we set the first authority as the default
+        // If a default authority was not found, we set the first authority as the
+        // default
         if (!foundDefaultAuthority && authoritiesJsonArr.length() > 0) {
             authoritiesJsonArr.getJSONObject(0).put("default", true);
         }
@@ -194,9 +206,11 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     private Uri makeRedirectUri(ReactApplicationContext context) throws Exception {
         try {
             final String packageName = context.getPackageName();
-            final PackageInfo info = context.getPackageManager().getPackageInfo(packageName, PackageManager.GET_SIGNATURES);
+            final PackageInfo info = context.getPackageManager().getPackageInfo(packageName,
+                    PackageManager.GET_SIGNATURES);
             if (info.signatures.length != 1) {
-                throw new RuntimeException("RNMSAL expected there to be exactly one signature for package " + packageName);
+                throw new RuntimeException(
+                        "RNMSAL expected there to be exactly one signature for package " + packageName);
             }
             Signature signature = info.signatures[0];
             final MessageDigest messageDigest = MessageDigest.getInstance("SHA");
@@ -216,9 +230,8 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void acquireToken(ReadableMap params, Promise promise) {
         try {
-            AcquireTokenParameters.Builder acquireTokenParameters =
-                    new AcquireTokenParameters.Builder()
-                            .startAuthorizationFromActivity(this.getCurrentActivity());
+            AcquireTokenParameters.Builder acquireTokenParameters = new AcquireTokenParameters.Builder()
+                    .startAuthorizationFromActivity(this.getCurrentActivity());
 
             // Required parameters
             List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
@@ -244,8 +257,7 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
 
             if (params.hasKey("extraQueryParameters")) {
                 List<Pair<String, String>> parameters = new ArrayList<>();
-                for (Map.Entry<String, Object> entry :
-                        params.getMap("extraQueryParameters").toHashMap().entrySet()) {
+                for (Map.Entry<String, Object> entry : params.getMap("extraQueryParameters").toHashMap().entrySet()) {
                     parameters.add(new Pair<>(entry.getKey(), entry.getValue().toString()));
                 }
                 acquireTokenParameters.withAuthorizationQueryStringParameters(parameters);
@@ -284,8 +296,7 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void acquireTokenSilent(ReadableMap params, Promise promise) {
         try {
-            AcquireTokenSilentParameters.Builder acquireTokenSilentParameters =
-                    new AcquireTokenSilentParameters.Builder();
+            AcquireTokenSilentParameters.Builder acquireTokenSilentParameters = new AcquireTokenSilentParameters.Builder();
 
             // Required parameters
             List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
@@ -297,12 +308,11 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
             acquireTokenSilentParameters.forAccount(account);
 
             // Optional parameters
-            String authority =
-                    publicClientApplication
-                            .getConfiguration()
-                            .getDefaultAuthority()
-                            .getAuthorityURL()
-                            .toString();
+            String authority = publicClientApplication
+                    .getConfiguration()
+                    .getDefaultAuthority()
+                    .getAuthorityURL()
+                    .toString();
             if (params.hasKey("authority")) {
                 authority = params.getString("authority");
             }
@@ -390,6 +400,224 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
         } catch (Exception e) {
             promise.reject(e);
         }
+
+    }
+
+    @ReactMethod
+    public void createSharedPublicClientApplication(ReadableMap params, Promise promise) {
+        ReactApplicationContext context = getReactApplicationContext();
+        try {
+            // We have to make a json file containing the MSAL configuration, then use that
+            // file to
+            // create the PublicClientApplication
+            // We first need to create the JSON model using the passed in parameters
+
+            JSONObject msalConfigJsonObj = params.hasKey("androidConfigOptions")
+                    ? ReadableMapUtils.toJsonObject(params.getMap("androidConfigOptions"))
+                    : new JSONObject();
+
+            // Account mode. Required to be MULTIPLE for this library
+            msalConfigJsonObj.put("account_mode", "MULTIPLE");
+
+            // If broker_redirect_uri_registered is not provided in androidConfigOptions,
+            // default it to false
+            if (!msalConfigJsonObj.has("broker_redirect_uri_registered")) {
+                msalConfigJsonObj.put("broker_redirect_uri_registered", false);
+            }
+
+            ReadableMap auth = params.getMap("auth");
+
+            // Authority
+            String authority = getStringOrDefault(auth, "authority", "https://login.microsoftonline.com/common");
+            msalConfigJsonObj.put("authority", authority);
+
+            // Client id
+            msalConfigJsonObj.put("client_id", getStringOrThrow(auth, "clientId"));
+
+            // Redirect URI
+            msalConfigJsonObj.put("redirect_uri",
+                    auth.hasKey("redirectUri") ? auth.getString("redirectUri") : makeRedirectUri(context).toString());
+
+            // Authorities
+            ReadableArray knownAuthorities = auth.getArray("knownAuthorities");
+            // List WILL be instantiated and empty if `knownAuthorities` is null
+            List<String> authoritiesList = readableArrayToStringList(knownAuthorities);
+            // Make sure the `authority` makes it in the authority list
+            if (!authoritiesList.contains(authority)) {
+                authoritiesList.add(authority);
+            }
+            // The authoritiesList is just a list of urls (strings), but the native android
+            // MSAL
+            // library expects an array of objects, so we have to parse the urls
+            JSONArray authoritiesJsonArr = makeAuthoritiesJsonArray(authoritiesList, authority);
+            msalConfigJsonObj.put("authorities", authoritiesJsonArr);
+
+            // Serialize the JSON config to a string
+            String serializedMsalConfig = msalConfigJsonObj.toString();
+            Log.d("RNMSALModule", serializedMsalConfig);
+
+            // Create a temporary file and write the serialized config to it
+            File file = File.createTempFile("RNMSAL_msal_config", ".tmp");
+            file.deleteOnExit();
+            FileWriter writer = new FileWriter(file);
+            writer.write(serializedMsalConfig);
+            writer.close();
+
+            // Finally, create the PCA with the temporary config file we created
+            publicSharedClientApplication = PublicClientApplication.createSingleAccountPublicClientApplication(
+                    context, file);
+            promise.resolve(null);
+        } catch (Exception e) {
+            promise.reject(e);
+        }
+    }
+
+    @ReactMethod
+    public void acquireSharedToken(ReadableMap params, Promise promise) {
+        try {
+            AcquireTokenParameters.Builder acquireTokenParameters = new AcquireTokenParameters.Builder()
+                    .startAuthorizationFromActivity(this.getCurrentActivity());
+
+            // Required parameters
+            List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
+            acquireTokenParameters.withScopes(scopes);
+
+            // Optional parameters
+            if (params.hasKey("authority")) {
+                acquireTokenParameters.fromAuthority(params.getString("authority"));
+            }
+
+            if (params.hasKey("promptType")) {
+                acquireTokenParameters.withPrompt(Prompt.values()[params.getInt("promptType")]);
+            }
+
+            if (params.hasKey("loginHint")) {
+                acquireTokenParameters.withLoginHint(params.getString("loginHint"));
+            }
+
+            if (params.hasKey("extraScopesToConsent")) {
+                acquireTokenParameters.withOtherScopesToAuthorize(
+                        readableArrayToStringList(params.getArray("extraScopesToConsent")));
+            }
+
+            if (params.hasKey("extraQueryParameters")) {
+                List<Pair<String, String>> parameters = new ArrayList<>();
+                for (Map.Entry<String, Object> entry : params.getMap("extraQueryParameters").toHashMap().entrySet()) {
+                    parameters.add(new Pair<>(entry.getKey(), entry.getValue().toString()));
+                }
+                acquireTokenParameters.withAuthorizationQueryStringParameters(parameters);
+            }
+
+            acquireTokenParameters.withCallback(getAuthInteractiveCallback(promise));
+            publicSharedClientApplication.acquireToken(acquireTokenParameters.build());
+        } catch (Exception e) {
+            promise.reject(e);
+        }
+    }
+
+    @ReactMethod
+    public void acquireSharedTokenSilent(ReadableMap params, Promise promise) {
+        try {
+            AcquireTokenSilentParameters.Builder acquireTokenSilentParameters = new AcquireTokenSilentParameters.Builder();
+
+            // Required parameters
+            List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
+            acquireTokenSilentParameters.withScopes(scopes);
+
+            ReadableMap accountIn = params.getMap("account");
+            String accountIdentifier = accountIn.getString("identifier");
+            IAccount account = publicClientApplication.getAccount(accountIdentifier);
+            acquireTokenSilentParameters.forAccount(account);
+
+            // Optional parameters
+            String authority = publicClientApplication
+                    .getConfiguration()
+                    .getDefaultAuthority()
+                    .getAuthorityURL()
+                    .toString();
+            if (params.hasKey("authority")) {
+                authority = params.getString("authority");
+            }
+            acquireTokenSilentParameters.fromAuthority(authority);
+
+            if (params.hasKey("forceRefresh")) {
+                acquireTokenSilentParameters.forceRefresh(params.getBoolean("forceRefresh"));
+            }
+
+            acquireTokenSilentParameters.withCallback(getAuthSilentCallback(promise));
+            publicSharedClientApplication.acquireTokenSilentAsync(acquireTokenSilentParameters.build());
+        } catch (Exception e) {
+            promise.reject(e);
+        }
+    }
+
+    @ReactMethod
+    public void getCurrentAccount(Promise promise) {
+        try {
+            IAccount activeAccount = publicSharedClientApplication
+                    .getCurrentAccountAsync(getCurrentAccountCallback(promise));
+            promise.resolve(activeAccount);
+        } catch (Exception e) {
+            promise.reject(e);
+        }
+    }
+
+    private CurrentAccountCallback getCurrentAccountCallback(Promise promise) {
+
+        return new CurrentAccountCallback() {
+            @Override
+            public void onAccountLoaded(IAccount activeAccount) {
+                WritableMap map = Arguments.createMap();
+                if (activeAccount != null) {
+                    map.putMap("currentAccount", accountToMap(activeAccount));
+                    promise.resolve(activeAccount);
+                } else {
+                    promise.resolve(null);
+                }
+            }
+
+            @Override
+            public void onAccountChanged(IAccount priorAccount, IAccount currentAccount) {
+                WritableMap map = Arguments.createMap();
+                map.putMap("currentAccount", accountToMap(currentAccount));
+                map.putMap("priorAccount", accountToMap(priorAccount));
+                if (currentAccount != null && priorAccount != null) {
+                    boolean accountHasChanged = priorAccount.getId() != currentAccount.getId();
+                    map.putBoolean("accountHasChanged", accountHasChanged);
+                }
+                boolean accountHasChanged = false;
+                map.putBoolean("accountHasChanged", accountHasChanged);
+                promise.resolve(map);
+
+            }
+
+            @Override
+            public void onError(MsalException exception) {
+                promise.reject(exception);
+
+            }
+        };
+    }
+
+    @ReactMethod
+    public void signOutSharedAccount(Promise promise) {
+        try {
+            publicSharedClientApplication.signOut(new SignOutCallback() {
+                @Override
+                public void onSignOut() {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(@NonNull MsalException exception) {
+                    promise.reject(exception);
+                }
+            });
+
+        } catch (Exception e) {
+            promise.reject(e);
+        }
+
     }
 
     private WritableMap msalResultToDictionary(@NonNull IAuthenticationResult result) {
@@ -398,7 +626,8 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
         map.putString("expiresOn", String.format("%s", result.getExpiresOn().getTime() / 1000));
         String idToken = result.getAccount().getIdToken();
         if (idToken == null) {
-            idToken = ((IMultiTenantAccount) result.getAccount()).getTenantProfiles().get(result.getTenantId()).getIdToken();
+            idToken = ((IMultiTenantAccount) result.getAccount()).getTenantProfiles().get(result.getTenantId())
+                    .getIdToken();
         }
         map.putString("idToken", idToken);
         map.putArray("scopes", Arguments.fromArray(result.getScope()));
@@ -418,7 +647,6 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
         }
         return map;
     }
-
 
     @NonNull
     private List<String> readableArrayToStringList(@Nullable ReadableArray readableArray) {

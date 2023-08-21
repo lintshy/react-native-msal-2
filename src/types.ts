@@ -103,6 +103,7 @@ export interface MSALAndroidConfigOptions {
     logcat_enabled?: boolean;
   };
   multiple_clouds_supported?: boolean;
+  shared_device_mode_supported?: boolean
 }
 
 export interface MSALInteractiveParams {
