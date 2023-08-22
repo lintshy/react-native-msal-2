@@ -1,4 +1,4 @@
-package com.reactnativemsal;
+package com.reactnativemsal2;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -7,7 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Code copied from org.apache.commons.io/FileUtils.java and org.apache.commons.io/IOUtils.java,
+ * Code copied from org.apache.commons.io/FileUtils.java and
+ * org.apache.commons.io/IOUtils.java,
  * v2.8
  */
 public class FileUtils {

@@ -1,13 +1,15 @@
 import { Platform } from 'react-native';
-import PublicClientApplication from 'react-native-msal';
-import type {
-  MSALAccount,
+import {
+  PublicClientApplication, SharedPublicClientApplication, MSALAccount,
   MSALConfiguration,
   MSALInteractiveParams,
   MSALResult,
   MSALSignoutParams,
   MSALSilentParams,
   MSALWebviewParams,
+} from '../../src';
+import type {
+
 } from 'react-native-msal';
 
 export interface B2CPolicies {

@@ -1,4 +1,4 @@
-package com.reactnativemsal;
+package com.reactnativemsal2;
 
 import androidx.annotation.NonNull;
 
@@ -10,7 +10,7 @@ import com.facebook.react.uimanager.ViewManager;
 import java.util.Collections;
 import java.util.List;
 
-public class RNMSALPackage implements ReactPackage {
+public class RNMSAL2Package implements ReactPackage {
     @NonNull
     @Override
     public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {

@@ -1,5 +1,3 @@
-import type { Configuration } from '@azure/msal-browser';
-
 export interface IPublicClientApplication {
   /**
    * Acquire a token interactively
@@ -52,6 +50,60 @@ export interface IPublicClientApplication {
   signOut(params: MSALSignoutParams): Promise<boolean>;
 }
 
+export interface ISharedPublicClientApplication {
+  /**
+   * Acquire a token interactively
+   * @param {MSALInteractiveParams} params
+   * @return Result containing an access token and account identifier
+   * used for acquiring subsequent tokens silently
+   */
+  acquireSharedToken(params: MSALInteractiveParams): Promise<MSALResult | undefined>;
+
+  /**
+   * Acquire a token silently
+   * @param {MSALSilentParams} params - Includes the account identifer retrieved from a
+   * previous interactive login
+   * @return Result containing an access token and account identifier
+   * used for acquiring subsequent tokens silently
+   */
+  acquireSharedTokenSilent(params: MSALSilentParams): Promise<MSALResult | undefined>;
+
+  /**
+   * Get all accounts for which this application has refresh tokens
+   * @return Promise containing array of MSALAccount objects for which this application
+   * has refresh tokens.
+   */
+  getCurrentAccount(): Promise<MSALSharedAccountState>;
+
+
+
+  /**
+   * SignOut the account for this application and if the device is in shared mode, from all apps as well.
+   * account.
+   * @param {MSALAccount} account
+   * @return A promise containing a boolean = true if account signOut was successful
+   * otherwise rejects
+   */
+  signOutSharedAccount(account: MSALAccount): Promise<boolean>;
+
+}
+
+export interface MSALSharedAccountState {
+  /**
+   * Current active account in device.
+   */
+  currentAccount: MSALAccount
+  /**
+   * Account currently logged in to the app which is different from the one in the device
+   */
+  priorAccount: MSALAccount
+  /**
+   * Flag that denotes if account has changed on the device.
+   */
+  accountHasChanged: boolean
+
+}
+
 export interface MSALConfiguration {
   auth: {
     /**
@@ -77,7 +129,7 @@ export interface MSALConfiguration {
   /**
    * @platform web
    */
-  cache?: Configuration['cache'] & { cacheLocation?: 'localStorage' | 'sessionStorage' };
+  cache?: { cacheLocation?: 'localStorage' | 'sessionStorage' };
   /**
    * Options as described here: {@link https://docs.microsoft.com/en-us/azure/active-directory/develop/msal-configuration}
    * @platform android
@@ -225,7 +277,7 @@ export interface MSALResult {
    * The time that the access token returned in the accessToken property ceases to be valid.
    * This value is calculated based on current UTC time measured locally and the value expiresIn returned from the service
    */
-  expiresOn: number;
+  expiresOn: number | string;
   /**
    * The raw id token if it’s returned by the service or undefined if no id token is returned.
    */
@@ -260,7 +312,20 @@ export interface MSALAccount {
   /**
    * ID token claims for the account. Can be used to read additional information about the account, e.g. name.
    */
-  claims?: object;
+  claims?: {
+    aio: string;
+    aud: string[];
+    iss: string;
+    name: string;
+    oid: string;
+    preferred_username: string;
+    rh: string;
+    roles: string[];
+    sub: string;
+    tid: string;
+    uti: string;
+    ver: string;
+  };
 }
 
 /**

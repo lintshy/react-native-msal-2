@@ -8,12 +8,13 @@ import type {
   MSALAccount,
   MSALSignoutParams,
   IPublicClientApplication,
+  ISharedPublicClientApplication
 } from './types';
 
 export class PublicClientApplication implements IPublicClientApplication {
   private isInitialized: boolean = false;
 
-  constructor(private readonly config: MSALConfiguration) {}
+  constructor(private readonly config: MSALConfiguration) { }
 
   public async init() {
     if (!this.isInitialized) {
@@ -62,5 +63,45 @@ export class PublicClientApplication implements IPublicClientApplication {
         'PublicClientApplication is not initialized. You must call the `init` method before any other method.'
       );
     }
+  }
+}
+
+export class SharedPublicClientApplication implements ISharedPublicClientApplication {
+  private isInitialized: boolean = false;
+
+  constructor(private readonly config: MSALConfiguration) { }
+  private validateIsInitialized() {
+    if (!this.isInitialized) {
+      throw new Error(
+        'SharedPublicClientApplication is not initialized. You must call the `init` method before any other method.'
+      );
+    }
+  }
+  public async init() {
+    if (!this.isInitialized) {
+      await RNMSAL.createSharedPublicClientApplication(this.config);
+      this.isInitialized = true;
+    }
+    return this;
+  }
+
+  public async acquireSharedToken(params: MSALInteractiveParams) {
+    this.validateIsInitialized();
+    return await RNMSAL.acquireSharedToken(params);
+  }
+
+  public async acquireSharedTokenSilent(params: MSALSilentParams) {
+    this.validateIsInitialized();
+    return await RNMSAL.acquireSharedTokenSilent(params);
+  }
+
+  public async getCurrentAccount() {
+    this.validateIsInitialized();
+    return await RNMSAL.getCurrentAccount();
+  }
+
+  public async signOutSharedAccount() {
+    this.validateIsInitialized()
+    return await RNMSAL.signOutSharedAccount()
   }
 }

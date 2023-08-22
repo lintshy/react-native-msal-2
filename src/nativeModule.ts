@@ -7,6 +7,7 @@ import type {
   MSALSignoutParams,
   MSALAccount,
   MSALConfiguration,
+  MSALSharedAccountState,
 } from './types';
 
 type RNMSALNativeModule = {
@@ -22,7 +23,7 @@ type RNMSALNativeModule = {
   acquireSharedToken(params: MSALInteractiveParams): Promise<MSALResult | undefined>;
   acquireSharedTokenSilent(params: MSALSilentParams): Promise<MSALResult | undefined>;
   signOutSharedAccount(): Promise<boolean>;
-  getCurrentAccount(): Promise<MSALAccount>
+  getCurrentAccount(): Promise<MSALSharedAccountState>
 };
 
 const RNMSAL: RNMSALNativeModule = NativeModules.RNMSAL;

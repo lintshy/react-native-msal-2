@@ -1,4 +1,4 @@
-package com.reactnativemsal;
+package com.reactnativemsal2;
 
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -48,8 +48,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.reactnativemsal.ReadableMapUtils.getStringOrDefault;
-import static com.reactnativemsal.ReadableMapUtils.getStringOrThrow;
+import static com.reactnativemsal2.ReadableMapUtils.getStringOrDefault;
+import static com.reactnativemsal2.ReadableMapUtils.getStringOrThrow;
 
 public class RNMSALModule extends ReactContextBaseJavaModule {
     private static final String AUTHORITY_TYPE_B2C = "B2C";
@@ -524,13 +524,8 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
             List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
             acquireTokenSilentParameters.withScopes(scopes);
 
-            ReadableMap accountIn = params.getMap("account");
-            String accountIdentifier = accountIn.getString("identifier");
-            IAccount account = publicClientApplication.getAccount(accountIdentifier);
-            acquireTokenSilentParameters.forAccount(account);
-
             // Optional parameters
-            String authority = publicClientApplication
+            String authority = publicSharedClientApplication
                     .getConfiguration()
                     .getDefaultAuthority()
                     .getAuthorityURL()
@@ -554,9 +549,8 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void getCurrentAccount(Promise promise) {
         try {
-            IAccount activeAccount = publicSharedClientApplication
-                    .getCurrentAccountAsync(getCurrentAccountCallback(promise));
-            promise.resolve(activeAccount);
+            publicSharedClientApplication.getCurrentAccountAsync(getCurrentAccountCallback(promise));
+
         } catch (Exception e) {
             promise.reject(e);
         }

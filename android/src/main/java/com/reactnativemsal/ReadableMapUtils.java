@@ -1,4 +1,4 @@
-package com.reactnativemsal;
+package com.reactnativemsal2;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -81,7 +81,8 @@ public class ReadableMapUtils {
   }
 
   @NonNull
-  public static String getStringOrDefault(@Nullable ReadableMap map, @NonNull String key, @NonNull String defaultValue) {
+  public static String getStringOrDefault(@Nullable ReadableMap map, @NonNull String key,
+      @NonNull String defaultValue) {
     try {
       return getStringOrThrow(map, key);
     } catch (Exception ex) {
