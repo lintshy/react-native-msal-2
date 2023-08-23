@@ -84,24 +84,28 @@ export class SharedPublicClientApplication implements ISharedPublicClientApplica
     }
     return this;
   }
+  public async signInSharedAccount(params: MSALInteractiveParams) {
+    this.validateIsInitialized();
+    return RNMSAL.signInSharedAccount(params)
+  }
 
   public async acquireSharedToken(params: MSALInteractiveParams) {
     this.validateIsInitialized();
-    return await RNMSAL.acquireSharedToken(params);
+    return RNMSAL.acquireSharedToken(params);
   }
 
   public async acquireSharedTokenSilent(params: MSALSilentParams) {
     this.validateIsInitialized();
-    return await RNMSAL.acquireSharedTokenSilent(params);
+    return RNMSAL.acquireSharedTokenSilent(params);
   }
 
   public async getCurrentAccount() {
     this.validateIsInitialized();
-    return await RNMSAL.getCurrentAccount();
+    return RNMSAL.getCurrentAccount();
   }
 
   public async signOutSharedAccount() {
     this.validateIsInitialized()
-    return await RNMSAL.signOutSharedAccount()
+    return RNMSAL.signOutSharedAccount()
   }
 }

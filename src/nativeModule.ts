@@ -20,12 +20,13 @@ type RNMSALNativeModule = {
   signout(params: MSALSignoutParams): Promise<boolean>;
 
   createSharedPublicClientApplication(config: MSALConfiguration): Promise<void>;
+  signInSharedAccount(params: MSALInteractiveParams): Promise<MSALResult | undefined>;
   acquireSharedToken(params: MSALInteractiveParams): Promise<MSALResult | undefined>;
   acquireSharedTokenSilent(params: MSALSilentParams): Promise<MSALResult | undefined>;
   signOutSharedAccount(): Promise<boolean>;
   getCurrentAccount(): Promise<MSALSharedAccountState>
 };
 
-const RNMSAL: RNMSALNativeModule = NativeModules.RNMSAL;
+const RNMSAL: RNMSALNativeModule = NativeModules.RNMSAL2;
 
 export default RNMSAL;

@@ -14,7 +14,7 @@ public class RNMSAL2Package implements ReactPackage {
     @NonNull
     @Override
     public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
-        return Collections.singletonList(new RNMSALModule(reactContext));
+        return Collections.singletonList(new RNMSAL2Module(reactContext));
     }
 
     @NonNull

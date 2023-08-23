@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
 import static com.reactnativemsal2.ReadableMapUtils.getStringOrDefault;
 import static com.reactnativemsal2.ReadableMapUtils.getStringOrThrow;
 
-public class RNMSALModule extends ReactContextBaseJavaModule {
+public class RNMSAL2Module extends ReactContextBaseJavaModule {
     private static final String AUTHORITY_TYPE_B2C = "B2C";
     private static final String AUTHORITY_TYPE_AAD = "AAD";
 
@@ -61,14 +61,16 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     private IMultipleAccountPublicClientApplication publicClientApplication;
     private ISingleAccountPublicClientApplication publicSharedClientApplication;
 
-    public RNMSALModule(ReactApplicationContext reactContext) {
+    private IAccount mAccount;
+
+    public RNMSAL2Module(ReactApplicationContext reactContext) {
         super(reactContext);
     }
 
     @NonNull
     @Override
     public String getName() {
-        return "RNMSAL";
+        return "RNMSAL2";
     }
 
     @ReactMethod
@@ -417,7 +419,7 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
                     : new JSONObject();
 
             // Account mode. Required to be MULTIPLE for this library
-            msalConfigJsonObj.put("account_mode", "MULTIPLE");
+            msalConfigJsonObj.put("account_mode", "SINGLE");
 
             // If broker_redirect_uri_registered is not provided in androidConfigOptions,
             // default it to false
@@ -473,43 +475,86 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void signInSharedAccount(ReadableMap params, Promise promise) {
+        String[] scopes = params.getArray("scopes");
+        publicSharedClientApplication.signIn(this.getCurrentActivity(), null, scopes,
+                getAuthCallback(promise));
+
+    }
+
+    private AuthenticationCallback getAuthCallback(Promise promise) {
+        return new AuthenticationCallback() {
+
+            @Override
+            public void onSuccess(IAuthenticationResult authenticationResult) {
+                /* Successfully got a token, use it to call a protected resource - MSGraph */
+
+                /* Update account */
+                mAccount = authenticationResult.getAccount();
+                promise.resolve(mAccount);
+
+            }
+
+            @Override
+            public void onError(MsalException exception) {
+                /* Failed to acquireToken */
+
+                promise.reject(exception);
+            }
+
+            @Override
+            public void onCancel() {
+                promise.resolve(false);
+            }
+        };
+    }
+
+    @ReactMethod
     public void acquireSharedToken(ReadableMap params, Promise promise) {
         try {
-            AcquireTokenParameters.Builder acquireTokenParameters = new AcquireTokenParameters.Builder()
-                    .startAuthorizationFromActivity(this.getCurrentActivity());
-
-            // Required parameters
-            List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
-            acquireTokenParameters.withScopes(scopes);
-
-            // Optional parameters
-            if (params.hasKey("authority")) {
-                acquireTokenParameters.fromAuthority(params.getString("authority"));
-            }
-
-            if (params.hasKey("promptType")) {
-                acquireTokenParameters.withPrompt(Prompt.values()[params.getInt("promptType")]);
-            }
-
-            if (params.hasKey("loginHint")) {
-                acquireTokenParameters.withLoginHint(params.getString("loginHint"));
-            }
-
-            if (params.hasKey("extraScopesToConsent")) {
-                acquireTokenParameters.withOtherScopesToAuthorize(
-                        readableArrayToStringList(params.getArray("extraScopesToConsent")));
-            }
-
-            if (params.hasKey("extraQueryParameters")) {
-                List<Pair<String, String>> parameters = new ArrayList<>();
-                for (Map.Entry<String, Object> entry : params.getMap("extraQueryParameters").toHashMap().entrySet()) {
-                    parameters.add(new Pair<>(entry.getKey(), entry.getValue().toString()));
-                }
-                acquireTokenParameters.withAuthorizationQueryStringParameters(parameters);
-            }
-
-            acquireTokenParameters.withCallback(getAuthInteractiveCallback(promise));
-            publicSharedClientApplication.acquireToken(acquireTokenParameters.build());
+            /*
+             * AcquireTokenParameters.Builder acquireTokenParameters = new
+             * AcquireTokenParameters.Builder()
+             * .startAuthorizationFromActivity(this.getCurrentActivity());
+             * 
+             * // Required parameters
+             * List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
+             * acquireTokenParameters.withScopes(scopes);
+             * 
+             * // Optional parameters
+             * if (params.hasKey("authority")) {
+             * acquireTokenParameters.fromAuthority(params.getString("authority"));
+             * }
+             * 
+             * if (params.hasKey("promptType")) {
+             * acquireTokenParameters.withPrompt(Prompt.values()[params.getInt("promptType")
+             * ]);
+             * }
+             * 
+             * if (params.hasKey("loginHint")) {
+             * acquireTokenParameters.withLoginHint(params.getString("loginHint"));
+             * }
+             * 
+             * if (params.hasKey("extraScopesToConsent")) {
+             * acquireTokenParameters.withOtherScopesToAuthorize(
+             * readableArrayToStringList(params.getArray("extraScopesToConsent")));
+             * }
+             * 
+             * if (params.hasKey("extraQueryParameters")) {
+             * List<Pair<String, String>> parameters = new ArrayList<>();
+             * for (Map.Entry<String, Object> entry :
+             * params.getMap("extraQueryParameters").toHashMap().entrySet()) {
+             * parameters.add(new Pair<>(entry.getKey(), entry.getValue().toString()));
+             * }
+             * acquireTokenParameters.withAuthorizationQueryStringParameters(parameters);
+             * }
+             * 
+             * acquireTokenParameters.withCallback(getAuthInteractiveCallback(promise));
+             * publicSharedClientApplication.acquireToken(acquireTokenParameters.build());
+             */
+            String[] scopes = params.getArray("scopes");
+            publicSharedClientApplication.acquireToken(this.getCurrentActivity(), scopes,
+                    getAuthCallback(promise));
         } catch (Exception e) {
             promise.reject(e);
         }
@@ -518,79 +563,97 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void acquireSharedTokenSilent(ReadableMap params, Promise promise) {
         try {
-            AcquireTokenSilentParameters.Builder acquireTokenSilentParameters = new AcquireTokenSilentParameters.Builder();
-
-            // Required parameters
-            List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
-            acquireTokenSilentParameters.withScopes(scopes);
-
-            // Optional parameters
-            String authority = publicSharedClientApplication
-                    .getConfiguration()
-                    .getDefaultAuthority()
-                    .getAuthorityURL()
-                    .toString();
-            if (params.hasKey("authority")) {
-                authority = params.getString("authority");
-            }
-            acquireTokenSilentParameters.fromAuthority(authority);
-
-            if (params.hasKey("forceRefresh")) {
-                acquireTokenSilentParameters.forceRefresh(params.getBoolean("forceRefresh"));
-            }
-
-            acquireTokenSilentParameters.withCallback(getAuthSilentCallback(promise));
-            publicSharedClientApplication.acquireTokenSilentAsync(acquireTokenSilentParameters.build());
+            /*
+             * AcquireTokenSilentParameters.Builder acquireTokenSilentParameters = new
+             * AcquireTokenSilentParameters.Builder();
+             * 
+             * // Required parameters
+             * List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
+             * acquireTokenSilentParameters.withScopes(scopes);
+             * 
+             * // Optional parameters
+             * String authority = publicSharedClientApplication
+             * .getConfiguration()
+             * .getDefaultAuthority()
+             * .getAuthorityURL()
+             * .toString();
+             * if (params.hasKey("authority")) {
+             * authority = params.getString("authority");
+             * }
+             * acquireTokenSilentParameters.fromAuthority(authority);
+             * 
+             * if (params.hasKey("forceRefresh")) {
+             * acquireTokenSilentParameters.forceRefresh(params.getBoolean("forceRefresh"));
+             * }
+             * 
+             * acquireTokenSilentParameters.withCallback(getAuthSilentCallback(promise));
+             * publicSharedClientApplication.acquireTokenSilentAsync(
+             * acquireTokenSilentParameters.build());
+             */
+            String[] scopes = params.getArray("scopes");
+            publicSharedClientApplication.acquireTokenSilentAsync(scopes, mAccount.getAuthority(),
+                    getAuthSharedSilentCallback(promise));
         } catch (Exception e) {
             promise.reject(e);
         }
     }
 
-    @ReactMethod
-    public void getCurrentAccount(Promise promise) {
-        try {
-            publicSharedClientApplication.getCurrentAccountAsync(getCurrentAccountCallback(promise));
-
-        } catch (Exception e) {
-            promise.reject(e);
-        }
-    }
-
-    private CurrentAccountCallback getCurrentAccountCallback(Promise promise) {
-
-        return new CurrentAccountCallback() {
-            @Override
-            public void onAccountLoaded(IAccount activeAccount) {
-                WritableMap map = Arguments.createMap();
-                if (activeAccount != null) {
-                    map.putMap("currentAccount", accountToMap(activeAccount));
-                    promise.resolve(activeAccount);
-                } else {
-                    promise.resolve(null);
-                }
-            }
+    private SilentAuthenticationCallback getAuthSharedSilentCallback(Promise promise) {
+        return new SilentAuthenticationCallback() {
 
             @Override
-            public void onAccountChanged(IAccount priorAccount, IAccount currentAccount) {
-                WritableMap map = Arguments.createMap();
-                map.putMap("currentAccount", accountToMap(currentAccount));
-                map.putMap("priorAccount", accountToMap(priorAccount));
-                if (currentAccount != null && priorAccount != null) {
-                    boolean accountHasChanged = priorAccount.getId() != currentAccount.getId();
-                    map.putBoolean("accountHasChanged", accountHasChanged);
-                }
-                boolean accountHasChanged = false;
-                map.putBoolean("accountHasChanged", accountHasChanged);
-                promise.resolve(map);
+            public void onSuccess(IAuthenticationResult authenticationResult) {
+
+                promise.resolve(msalResultToDictionary(authenticationResult));
+                /* Successfully got a token, use it to call a protected resource - MSGraph */
 
             }
 
             @Override
             public void onError(MsalException exception) {
+                /* Failed to acquireToken */
                 promise.reject(exception);
-
             }
         };
+    }
+
+    @ReactMethod
+    public void getCurrentAccount(Promise promise) {
+        try {
+            publicSharedClientApplication.getCurrentAccountAsync(new CurrentAccountCallback() {
+                @Override
+                public void onAccountLoaded(@Nullable IAccount activeAccount) {
+                    // You can use the account data to update your UI or your app database.
+                    mAccount = activeAccount;
+                    WritableMap map = Arguments.createMap();
+                    map.putMap("currentAccount", accountToMap(activeAccount));
+                    map.putMap("priorAccount", accountToMap(null));
+                    map.putBoolean("accountHasChanged", false);
+                    map.putString("currentEvent", "onAccountLoaded");
+                    promise.resolve(map);
+                }
+
+                @Override
+                public void onAccountChanged(@Nullable IAccount priorAccount, @Nullable IAccount currentAccount) {
+                    if (currentAccount == null) {
+                        WritableMap map = Arguments.createMap();
+                        map.putMap("currentAccount", accountToMap(currentAccount));
+                        map.putMap("priorAccount", accountToMap(priorAccount));
+                        map.putBoolean("accountHasChanged", true);
+                        map.putString("currentEvent", "onAccountChanged");
+                        promise.resolve(map);
+                    }
+                }
+
+                @Override
+                public void onError(@NonNull MsalException exception) {
+                    promise.reject(exception);
+                }
+            });
+
+        } catch (Exception e) {
+            promise.reject(e);
+        }
     }
 
     @ReactMethod
@@ -599,6 +662,7 @@ public class RNMSALModule extends ReactContextBaseJavaModule {
             publicSharedClientApplication.signOut(new SignOutCallback() {
                 @Override
                 public void onSignOut() {
+                    mAccount = null;
                     promise.resolve(true);
                 }
 

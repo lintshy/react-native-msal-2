@@ -51,6 +51,14 @@ export interface IPublicClientApplication {
 }
 
 export interface ISharedPublicClientApplication {
+
+  /**
+  * Sign user in interactively.
+  * @param {MSALInteractiveParams} params
+  * @return Result containing an access token and account identifier
+  * used for acquiring subsequent tokens silently
+  */
+  signInSharedAccount(params: MSALInteractiveParams): Promise<MSALResult | undefined>;
   /**
    * Acquire a token interactively
    * @param {MSALInteractiveParams} params
@@ -101,6 +109,10 @@ export interface MSALSharedAccountState {
    * Flag that denotes if account has changed on the device.
    */
   accountHasChanged: boolean
+  /**
+   * returns current event i.e onAccountLoaded or onAccountChanged
+   */
+  currentEvent: string
 
 }
 

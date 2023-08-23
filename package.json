@@ -1,9 +1,9 @@
 {
   "name": "react-native-msal-2",
-  "version": "1.0.11",
+  "version": "1.0.19",
   "description": "React Native MSAL wrapper for iOS and Android with shared device support for Android",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "source": "src/index",
   "scripts": {
     "example": "yarn --cwd example",
