@@ -1,26 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, ScrollView, PermissionsAndroid } from 'react-native'
-import { FileLogger, SendByEmailOptions } from 'react-native-file-logger'
+
 
 import { commonStyles } from '../../styles'
+import { NavigationRoutes } from '../../Constants'
 
-import { ButtonText, EmailRecepients, NavigationRoutes, StaticText, } from '../../Constants'
-import { ApiConfig } from '../../Config'
+
 
 
 
 export const ErrorScreen: React.FC<any> = ({ route, navigation }) => {
     const error = route?.params?.error
-    const isTestBuild = ApiConfig?.nonProdBuild
-    const [logPath, setLogPath] = useState<string[]>()
-    useEffect(() => {
-        async function init() {
-            const path = await FileLogger.getLogFilePaths()
-            console.log(`[Error] logs in ${path}`)
-            setLogPath(path)
-        }
-        init()
-    }, [])
+    
+ 
 
     let safeErrorText = ``
     try {
@@ -29,19 +21,11 @@ export const ErrorScreen: React.FC<any> = ({ route, navigation }) => {
     catch (e) {
         safeErrorText = `Unable to parse error`
     }
-    const sendLogFilesByEmail = async () => {
 
-
-        await FileLogger.sendLogFilesByEmail({
-            to: EmailRecepients.Support,
-            subject: 'Log files',
-            body: 'Please find attached the log files from your app',
-        });
-    };
 
 
     return <View style={[commonStyles.pageBase, styles.container]}>
-        <Text style={styles.errorMessage}>{StaticText.InitError}</Text>
+        <Text style={styles.errorMessage}>{'Error'}</Text>
         <Text></Text>
         <Pressable style={styles.submit} onPress={() => {
             navigation.reset({
@@ -49,17 +33,9 @@ export const ErrorScreen: React.FC<any> = ({ route, navigation }) => {
                 routes: [{ name: NavigationRoutes.Login }],
             });
         }}>
-            <Text>{ButtonText.LoginRetry}</Text>
+            <Text>{'Retry'}</Text>
         </Pressable>
-        {isTestBuild && <ScrollView>
-            <Text style={styles.errorText}>
-                {safeErrorText}
-            </Text>
-
-            <Text style={styles.errorText}>
-                Logs in {logPath}
-            </Text>
-        </ScrollView>}
+      
     </View >
 }
 

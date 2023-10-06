@@ -41,10 +41,10 @@ react {
     // bundleConfig = file(../rn-cli.config.js)
     //
     //   The name of the generated asset file containing your JS bundle
-    // bundleAssetName = "SHIPAUDITlication.android.bundle"
+    // bundleAssetName = "RNEXAMPLElication.android.bundle"
     //
     //   The entry file for bundle generation. Default is 'index.android.js' or 'index.js'
-    // entryFile = file("../js/SHIPAUDITlication.android.js")
+    // entryFile = file("../js/RNEXAMPLElication.android.js")
     //
     //   A list of extra flags to pass to the 'bundle' commands.
     //   See https://github.com/react-native-community/cli/blob/main/docs/commands.md#bundle
@@ -127,11 +127,11 @@ android {
             keyPassword 'android'
         }
         release {
-            if (project.hasProperty('SHIPAUDIT_UPLOAD_STORE_FILE')) {
-                storeFile file(SHIPAUDIT_UPLOAD_STORE_FILE)
-                storePassword SHIPAUDIT_UPLOAD_STORE_PASSWORD
-                keyAlias SHIPAUDIT_UPLOAD_KEY_ALIAS
-                keyPassword SHIPAUDIT_UPLOAD_KEY_PASSWORD
+            if (project.hasProperty('RNEXAMPLE_UPLOAD_STORE_FILE')) {
+                storeFile file(RNEXAMPLE_UPLOAD_STORE_FILE)
+                storePassword RNEXAMPLE_UPLOAD_STORE_PASSWORD
+                keyAlias RNEXAMPLE_UPLOAD_KEY_ALIAS
+                keyPassword RNEXAMPLE_UPLOAD_KEY_PASSWORD
                 v2SigningEnabled true
                 v1SigningEnabled false
             }

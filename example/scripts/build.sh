@@ -1,4 +1,4 @@
-echo "Starting Ship Audit Android Build"
+echo "Starting  Android Build"
 echo "=================================>"
 echo "Choose Environment : (local, dev, test, prod)"
 read ENVIRONMENT

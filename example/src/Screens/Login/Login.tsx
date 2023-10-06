@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { SafeAreaView, StyleSheet, View } from 'react-native';
-import type { MSALWebviewParams } from 'react-native-msal';
+import type { MSALWebviewParams, MSALResult} from 'react-native-msal-2';
 import { ActivityIndicator } from 'react-native-paper'
 
-import { MSALHDResult, setLocalAccessToken } from '../../Api';
+
 import { b2cScopes as scopes } from '../../Config';
-import { msal } from '../../../__data__/msaldata'
-import { useAuditDataContext } from '../../Contexts/AuditData';
+
 
 import { NavigationRoutes } from '../../Constants';
 import { useUserStore } from '../../Store';
@@ -14,30 +13,25 @@ import { useUserStore } from '../../Store';
 
 
 export function Login({ navigation }: any) {
-    const { setUser, getUser, setSelectedDC, setAccessToken, b2cClient,
+    const { setUser, getUser,  setAccessToken, b2cClient,
         initB2CClient, initSharedB2CClient, sharedB2CClient } = useUserStore()
-    const { setDcLocations, getDCLocations } = useAuditDataContext()
+    
     const [isError, setIsError] = useState<boolean>(false)
     const [isUserLoading, setIsUserLoading] = useState<boolean>(true)
     const webviewParameters: MSALWebviewParams = {
         ios_prefersEphemeralWebBrowserSession: false,
     };
-    const USE_LOCAL = false
-    const loginSideEffects = async (res: MSALHDResult) => {
+
+    const loginSideEffects = async (res: MSALResult) => {
         const out = {
             message: '[Login] printing login result',
             res
         }
-        console.log(JSON.stringify(out))
-        setAccessToken(res?.accessToken)
-        await setLocalAccessToken(res?.accessToken, res?.expiresOn?.toString())
+ 
         const user = await getUser(res)
 
         setUser(user)
-        console.log(`[Login pref location] ${user.preferredLocation}`)
-        setSelectedDC({ shortName: user?.preferredLocation })
-        const dcLocations = await getDCLocations()
-        setDcLocations(dcLocations)
+   
         navigation.reset({
             index: 0,
             routes: [{ name: NavigationRoutes.Home }],
@@ -49,11 +43,7 @@ export function Login({ navigation }: any) {
         async function init() {
             try {
                 setIsUserLoading(true)
-                if (USE_LOCAL) {
-                    const res = msal
-                    await loginSideEffects(res)
-                    return
-                }
+           
                 await initSharedB2CClient()
                 console.log('init')
                 console.log(JSON.stringify(sharedB2CClient))

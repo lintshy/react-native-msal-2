@@ -13,7 +13,7 @@ export function onLogout(navigation: any) {
     })
 }
 
-export function HDAuditStackContainer() {
+export function RNMSALStackContainer() {
     return (
         <Stack.Navigator>
             <Stack.Screen

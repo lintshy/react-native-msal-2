@@ -38,8 +38,8 @@
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
         <data
-          android:host="com.rn.msal.example.dev"
-          android:path="gYfucgrOlZ3FLWgYctqk1bCxZbo="
+          android:host="com.rn.msal.example"
+          android:path="/gYfucgrOlZ3FLWgYctqk1bCxZbo="
           android:scheme="msauth" />
       </intent-filter>
     </activity>
