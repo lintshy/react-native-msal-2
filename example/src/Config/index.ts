@@ -2,10 +2,8 @@ import type { B2CConfiguration } from '../Api'
 
 export * from './env.config'
 
-export const tenantId =
-    'fe99bbb3-bdc3-4260-998e-c28159c895a2'
-export const clientId =
-    '8be6111f-c94e-4a55-9e56-4aaa9936bdc1'
+export const tenantId = 'x'
+export const clientId = 'x'
 export const msalConfig = {
     auth: {
         clientId: clientId,
@@ -25,8 +23,7 @@ export const b2cConfig: B2CConfiguration = {
             signInSignUp: 'B2C_1_SignInUp',
             passwordReset: 'B2C_1_PasswordReset',
         },
-        redirectUri:
-            'msauth://com.rn.msal.example.dev/2lwrqqCAKszjWEvpP6zhKNWpMSo%3D',
+        redirectUri: 'msauth://com.rn.msal.example.dev/x',
     },
     androidConfigOptions: {
         shared_device_mode_supported: true,
@@ -35,7 +32,5 @@ export const b2cConfig: B2CConfiguration = {
 
 export const userRoles: string[] = ['Audit.user']
 
-export const b2cScopes = [
-    'api://8be6111f-c94e-4a55-9e56-4aaa9936bdc1/access',
-]
+export const b2cScopes = ['api://x/access']
 export const graphScopes = ['User.Read']

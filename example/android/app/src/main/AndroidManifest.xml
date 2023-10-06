@@ -39,7 +39,7 @@
         <category android:name="android.intent.category.BROWSABLE" />
         <data
           android:host="com.rn.msal.example.dev"
-          android:path="/2lwrqqCAKszjWEvpP6zhKNWpMSo="
+          android:path="x"
           android:scheme="msauth" />
       </intent-filter>
     </activity>
