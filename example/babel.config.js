@@ -1,17 +1,9 @@
-const path = require('path');
-
-const pak = require('../package.json');
-
 module.exports = {
-  presets: ['babel-preset-expo'],
+  presets: [
+    'module:metro-react-native-babel-preset'],
   plugins: [
-    [
-      'module-resolver',
-      {
-        alias: {
-          [pak.name]: path.join(__dirname, '..', pak.source),
-        },
-      },
-    ],
-  ],
-};
+    ['react-native-reanimated/plugin', {
+      globals: ['__scanCodes']
+    }]
+  ]
+}

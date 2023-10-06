@@ -468,6 +468,7 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
             // Finally, create the PCA with the temporary config file we created
             publicSharedClientApplication = PublicClientApplication.createSingleAccountPublicClientApplication(
                     context, file);
+            Log.d("[RNMSAL createSharedPublicClientApplication]", "Successfully init");
             promise.resolve(null);
         } catch (Exception e) {
             promise.reject(e);
@@ -476,7 +477,9 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void signInSharedAccount(ReadableMap params, Promise promise) {
-        String[] scopes = params.getArray("scopes");
+        List<String> scopeList = readableArrayToStringList(params.getArray("scopes"));
+        String[] scopes = scopeList.toArray(new String[0]);
+        Log.d("[RNMSAL signInSharedAccount]", "Attempting to signIn");
         publicSharedClientApplication.signIn(this.getCurrentActivity(), null, scopes,
                 getAuthCallback(promise));
 
@@ -491,13 +494,15 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
 
                 /* Update account */
                 mAccount = authenticationResult.getAccount();
-                promise.resolve(mAccount);
+                Log.d("[RNMSAL getAuthCallback]", "OnSuccess");
+                promise.resolve(msalResultToDictionary(authenticationResult));
 
             }
 
             @Override
             public void onError(MsalException exception) {
                 /* Failed to acquireToken */
+                Log.d("[RNMSAL getAuthCallback]", "OnError", exception);
 
                 promise.reject(exception);
             }
@@ -512,47 +517,9 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
     @ReactMethod
     public void acquireSharedToken(ReadableMap params, Promise promise) {
         try {
-            /*
-             * AcquireTokenParameters.Builder acquireTokenParameters = new
-             * AcquireTokenParameters.Builder()
-             * .startAuthorizationFromActivity(this.getCurrentActivity());
-             * 
-             * // Required parameters
-             * List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
-             * acquireTokenParameters.withScopes(scopes);
-             * 
-             * // Optional parameters
-             * if (params.hasKey("authority")) {
-             * acquireTokenParameters.fromAuthority(params.getString("authority"));
-             * }
-             * 
-             * if (params.hasKey("promptType")) {
-             * acquireTokenParameters.withPrompt(Prompt.values()[params.getInt("promptType")
-             * ]);
-             * }
-             * 
-             * if (params.hasKey("loginHint")) {
-             * acquireTokenParameters.withLoginHint(params.getString("loginHint"));
-             * }
-             * 
-             * if (params.hasKey("extraScopesToConsent")) {
-             * acquireTokenParameters.withOtherScopesToAuthorize(
-             * readableArrayToStringList(params.getArray("extraScopesToConsent")));
-             * }
-             * 
-             * if (params.hasKey("extraQueryParameters")) {
-             * List<Pair<String, String>> parameters = new ArrayList<>();
-             * for (Map.Entry<String, Object> entry :
-             * params.getMap("extraQueryParameters").toHashMap().entrySet()) {
-             * parameters.add(new Pair<>(entry.getKey(), entry.getValue().toString()));
-             * }
-             * acquireTokenParameters.withAuthorizationQueryStringParameters(parameters);
-             * }
-             * 
-             * acquireTokenParameters.withCallback(getAuthInteractiveCallback(promise));
-             * publicSharedClientApplication.acquireToken(acquireTokenParameters.build());
-             */
-            String[] scopes = params.getArray("scopes");
+            List<String> scopeList = readableArrayToStringList(params.getArray("scopes"));
+            String[] scopes = scopeList.toArray(new String[0]);
+            Log.d("[RNMSAL acquireSharedToken]", "Attempting to get token");
             publicSharedClientApplication.acquireToken(this.getCurrentActivity(), scopes,
                     getAuthCallback(promise));
         } catch (Exception e) {
@@ -563,34 +530,11 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
     @ReactMethod
     public void acquireSharedTokenSilent(ReadableMap params, Promise promise) {
         try {
-            /*
-             * AcquireTokenSilentParameters.Builder acquireTokenSilentParameters = new
-             * AcquireTokenSilentParameters.Builder();
-             * 
-             * // Required parameters
-             * List<String> scopes = readableArrayToStringList(params.getArray("scopes"));
-             * acquireTokenSilentParameters.withScopes(scopes);
-             * 
-             * // Optional parameters
-             * String authority = publicSharedClientApplication
-             * .getConfiguration()
-             * .getDefaultAuthority()
-             * .getAuthorityURL()
-             * .toString();
-             * if (params.hasKey("authority")) {
-             * authority = params.getString("authority");
-             * }
-             * acquireTokenSilentParameters.fromAuthority(authority);
-             * 
-             * if (params.hasKey("forceRefresh")) {
-             * acquireTokenSilentParameters.forceRefresh(params.getBoolean("forceRefresh"));
-             * }
-             * 
-             * acquireTokenSilentParameters.withCallback(getAuthSilentCallback(promise));
-             * publicSharedClientApplication.acquireTokenSilentAsync(
-             * acquireTokenSilentParameters.build());
-             */
-            String[] scopes = params.getArray("scopes");
+
+            List<String> scopeList = readableArrayToStringList(params.getArray("scopes"));
+            String[] scopes = scopeList.toArray(new String[0]);
+            Log.d("[RNMSAL acquireSharedTokenSilent]", "Attempting to get token");
+
             publicSharedClientApplication.acquireTokenSilentAsync(scopes, mAccount.getAuthority(),
                     getAuthSharedSilentCallback(promise));
         } catch (Exception e) {
@@ -603,6 +547,7 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
 
             @Override
             public void onSuccess(IAuthenticationResult authenticationResult) {
+                Log.d("[RNMSAL getAuthSharedSilentCallback]", "onSuccess");
 
                 promise.resolve(msalResultToDictionary(authenticationResult));
                 /* Successfully got a token, use it to call a protected resource - MSGraph */
@@ -612,6 +557,8 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
             @Override
             public void onError(MsalException exception) {
                 /* Failed to acquireToken */
+                Log.d("[RNMSAL getAuthSharedSilentCallback]", "onError", exception);
+
                 promise.reject(exception);
             }
         };
@@ -623,30 +570,36 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
             publicSharedClientApplication.getCurrentAccountAsync(new CurrentAccountCallback() {
                 @Override
                 public void onAccountLoaded(@Nullable IAccount activeAccount) {
+                    Log.d("[RNMSAL getCurrentAccount]", "OnAccountLoaded");
+
                     // You can use the account data to update your UI or your app database.
                     mAccount = activeAccount;
                     WritableMap map = Arguments.createMap();
-                    map.putMap("currentAccount", accountToMap(activeAccount));
-                    map.putMap("priorAccount", accountToMap(null));
+                    map.putMap("currentAccount", activeAccount != null ? accountToMap(activeAccount) : null);
+                    map.putMap("priorAccount", null);
                     map.putBoolean("accountHasChanged", false);
                     map.putString("currentEvent", "onAccountLoaded");
+                    Log.d("[RNMSAL getCurrentAccount]", "OnAccountLoaded resolved");
                     promise.resolve(map);
                 }
 
                 @Override
                 public void onAccountChanged(@Nullable IAccount priorAccount, @Nullable IAccount currentAccount) {
-                    if (currentAccount == null) {
-                        WritableMap map = Arguments.createMap();
-                        map.putMap("currentAccount", accountToMap(currentAccount));
-                        map.putMap("priorAccount", accountToMap(priorAccount));
-                        map.putBoolean("accountHasChanged", true);
-                        map.putString("currentEvent", "onAccountChanged");
-                        promise.resolve(map);
-                    }
+                    Log.d("[RNMSAL getCurrentAccount]", "OnAccountChanged");
+                    WritableMap map = Arguments.createMap();
+                    map.putMap("currentAccount", currentAccount != null ? accountToMap(currentAccount) : null);
+                    map.putMap("priorAccount", priorAccount != null ? accountToMap(priorAccount) : null);
+                    map.putBoolean("accountHasChanged", true);
+                    map.putString("currentEvent", "onAccountChanged");
+                    Log.d("[RNMSAL getCurrentAccount]", "OnAccountChanged resolved");
+                    promise.resolve(map);
+
                 }
 
                 @Override
                 public void onError(@NonNull MsalException exception) {
+                    Log.d("[RNMSAL getCurrentAccount]", "onError", exception);
+
                     promise.reject(exception);
                 }
             });
@@ -663,11 +616,15 @@ public class RNMSAL2Module extends ReactContextBaseJavaModule {
                 @Override
                 public void onSignOut() {
                     mAccount = null;
+                    Log.d("[RNMSAL signOutSharedAccount]", "onSignout resolved");
+
                     promise.resolve(true);
                 }
 
                 @Override
                 public void onError(@NonNull MsalException exception) {
+                    Log.d("[RNMSAL signOutSharedAccount]", "onError", exception);
+
                     promise.reject(exception);
                 }
             });
